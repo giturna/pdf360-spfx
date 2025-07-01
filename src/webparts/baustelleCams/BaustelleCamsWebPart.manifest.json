@@ -1,0 +1,25 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx/client-side-web-part-manifest.schema.json",
+  "id": "891d10f4-675b-4ae6-8554-3d197cc8afc0",
+  "alias": "BaustelleCamsWebPart",
+  "componentType": "WebPart",
+
+  "version": "1.0.0",
+  "manifestVersion": 2,
+
+  "requiresCustomScript": false,
+  "supportedHosts": ["SharePointWebPart", "TeamsPersonalApp", "TeamsTab", "SharePointFullPage"],
+  "supportsThemeVariants": true,
+  "supportsFullBleed": true,
+
+  "preconfiguredEntries": [{
+    "groupId": "5c03119e-3074-46fd-976b-c60198311f70",
+    "group": { "default": "Advanced" },
+    "title": { "default": "baustelleCams" },
+    "description": { "default": "baustelleCams description" },
+    "officeFabricIconFontName": "Page",
+    "properties": {
+      "description": "baustelleCams"
+    }
+  }]
+}

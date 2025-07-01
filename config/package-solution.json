@@ -1,0 +1,40 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
+  "solution": {
+    "name": "baustelle-cams-client-side-solution",
+    "id": "958918a0-d21a-4023-a332-ad0615385ce3",
+    "version": "2.4.2.0",
+    "includeClientSideAssets": true,
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "developer": {
+      "name": "",
+      "websiteUrl": "",
+      "privacyUrl": "",
+      "termsOfUseUrl": "",
+      "mpnId": "Undefined-1.20.0"
+    },
+    "metadata": {
+      "shortDescription": {
+        "default": "baustelleCams description"
+      },
+      "longDescription": {
+        "default": "baustelleCams description"
+      },
+      "screenshotPaths": [],
+      "videoUrl": "",
+      "categories": []
+    },
+    "features": [
+      {
+        "title": "baustelle-cams Feature",
+        "description": "The feature that activates elements of the baustelle-cams solution.",
+        "id": "3598562d-6890-438b-8d61-5be09291f007",
+        "version": "1.0.0.0"
+      }
+    ]
+  },
+  "paths": {
+    "zippedPackage": "solution/baustelle-cams.sppkg"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/config.2.0.schema.json",
+  "version": "2.0",
+  "bundles": {
+    "baustelle-cams-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/baustelleCams/BaustelleCamsWebPart.js",
+          "manifest": "./src/webparts/baustelleCams/BaustelleCamsWebPart.manifest.json"
+        }
+      ]
+    }
+  },
+  "externals": {},
+  "localizedResources": {
+    "BaustelleCamsWebPartStrings": "lib/webparts/baustelleCams/loc/{locale}.js",
+    "ControlStrings": "node_modules/@pnp/spfx-controls-react/lib/loc/{locale}.js"
+  }
+}

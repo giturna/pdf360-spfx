@@ -1,0 +1,460 @@
+@import '~@fluentui/react/dist/sass/References.scss';
+
+.baustelleCams {
+  overflow: hidden;
+  padding: 1em;
+  color: "[theme:bodyText, default: #323130]";
+  color: var(--bodyText);
+  &.teams {
+    font-family: $ms-font-family-fallbacks;
+  }
+}
+
+.welcome {
+  text-align: center;
+}
+
+.welcomeImage {
+  width: 100%;
+  max-width: 420px;
+}
+
+.links {
+  a {
+    text-decoration: none;
+    color: "[theme:link, default:#03787c]";
+    color: var(--link);
+
+    &:hover {
+      text-decoration: underline;
+      color: "[theme:linkHovered, default: #014446]";
+      color: var(--linkHovered);
+    }
+  }
+}
+
+.fieldLabel {
+  display: block;
+  margin-top: 12px;
+  font-weight: 600;
+}
+
+.textInput {
+  width: 100%;
+}
+
+.button {
+  margin-top: 16px;
+  border-radius: 4px;
+}
+
+.status {
+  margin-top: 12px;
+  font-style: italic;
+}
+
+.pdfButton {
+  padding: 6px 12px;
+  border: 1px solid #ccc;
+  background: white;
+  cursor: pointer;
+  &:hover { background: #f4f4f4; }
+}
+
+.viewerWrapper {
+  width: 100%;
+  height: calc(100% - 48px);
+}
+
+
+/* Gibt die Interaktion des Viewer-Containers im Modal frei */
+.psv-container,
+.psv-canvas-container,
+.psv-canvas {
+  pointer-events:  auto !important;
+  touch-action:    auto !important;   /* Für das mobile Ziehen */
+}
+
+.modalClass{
+  width:  80vw;
+  height: 80vh;
+  max-width: 80vw;
+}
+
+.sectionTitle {
+  margin: 0 0 6px 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.fileInput {
+  margin-bottom: 6px;
+}
+
+.primaryBtn {
+  padding: 6px 8px;
+  margin-bottom: 8px;
+  background: #0078d4;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.hr {
+  height: 1px;
+  background: #ddd;
+  margin: 8px 0;
+}
+
+.imgBtn {
+  flex:1;
+  width: 100%;
+  text-align: left;
+  margin-bottom: 6px;
+  padding: 5px 6px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  background: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  &:hover {
+    background: #e6f2ff;
+    border-color: #1a6aff;
+  }
+}
+
+.imgRow  { display:flex; margin-bottom:6px; }
+.delBtn  {
+  margin-left:4px;
+  background:#d13438;
+  color:#fff;
+  border:none;
+  width:24px; height:24px;
+  border-radius:3px;
+  cursor:pointer;
+  line-height:20px;
+  font-weight:bold;
+  margin-bottom: inherit;
+}
+
+.pnlm-container {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+
+.imgButton {
+  border-radius: 4px;
+}
+
+.deleteProjBtn {
+  padding: 6px 10px;
+  background: #d13438;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 6px;
+}
+
+
+/* ---------- FARBPALETTE ---------- */
+$brand-dark:   #143d6b;
+$brand-light:  #1a59a4;
+$gray-100:     #f8f8f8;
+$gray-200:     #ececec;
+$gray-300:     #d1d1d1;
+$gray-900:     #2d2d2d;
+
+/* ---------- ALLGEMEINE STRUKTUR ---------- */
+.wrapper {
+  display: flex;
+  height: calc(100vh - 32px);
+  gap: 0;
+  background: $gray-100;
+  border: 1px solid $gray-200;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* ---------- LINKES PANEL ---------- */
+.creatorPane {
+  width: 320px;
+  padding: 20px 16px;
+  background: #fff;
+  border-right: 1px solid $gray-200;
+
+  h3 { margin-top: 0; color: $brand-dark; }
+  label { @extend .fieldLabel; }
+
+  .deleteProjBtn,
+  .button {
+    width: 100%;
+    margin-top: 12px;
+    padding: 8px;
+    background: $brand-dark;
+    border-radius: 4px;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    &:disabled { opacity: .4; cursor: default; }
+    &:hover:not(:disabled) { background: $brand-light; }
+  }
+
+  .deleteProjBtn { background: #c43131; &:hover { background:#e04444; } }
+}
+
+/* ---------- RECHTES PANEL ---------- */
+.canvasPane {
+  flex: 1;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: relative;
+  overflow: hidden;
+
+  .status { margin: 0; font-style: italic; color: $brand-dark; }
+}
+
+/* Upload-Blöcke */
+.uploadPane {
+  margin-bottom: 16px;
+  label { display: block; margin-bottom: 4px;}
+  input { display: inline-block; }
+}
+.iconUpload {
+  margin-bottom: 16px;
+}
+.uploadPane,
+.iconUpload {
+  label { font-weight: 600; }
+  input { margin-top: 4px; }
+  .button {
+    margin-left: 8px;
+    padding: 6px 12px;
+  }
+}
+
+/* PDF-Buttonleiste */
+.pdfList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  .pdfButton {
+    padding: 6px 14px;
+    border: 1px solid $gray-300;
+    border-radius: 4px;
+    background: #fff;
+    cursor: pointer;
+    &:hover { background: $gray-200; }
+  }
+}
+
+/* ---------- CANVAS & ICONS ---------- */
+.canvasContainer {
+  position: relative;
+  display:inline-block;
+  border: 1px solid $gray-200;
+  box-shadow: 0 2px 6px rgba(0,0,0,.08);
+  background: #fff;
+}
+
+.icon {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  transform: translate(-50%, -50%);
+  user-select: none;
+  cursor: pointer;
+}
+
+.trash img { width: 32px; height: 32px; }
+.trash {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  width: 64px; height: 64px;
+  left: 16px; top: 16px;
+  border: 2px dashed $gray-300;
+  background: rgba(255,255,255,.9);
+  border-radius: 8px;
+  transition: border-color .2s;
+  &.hover { border-color: #e04444; }
+}
+
+/* PDF-Löschen Button */
+.deletePdfBtn {
+  left: 90%;
+  transform: translateX(-50%);
+  position: absolute;
+  top: 12px; right: 12px;
+  z-index: 5;
+  padding: 6px 12px;
+  background: #c43131;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  &:hover { background:#e04444; }
+}
+
+/* ---------- MODAL ---------- */
+.modalHost {
+  width: 90vw; height: 85vh;
+  max-width: 90vw;
+  max-height: 85vh;
+  display: flex; flex-direction: column; overflow: hidden;
+  border-radius: 8px;
+  box-shadow: 0 6px 24px rgba(0,0,0,.3);
+}
+
+.closeBtn {
+  position: absolute;
+  top: 8px; right: 10px;
+  z-index: 10;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 6px rgba(0,0,0,.25);
+}
+
+.modalBody {
+  flex: 1;
+  display: flex;
+  height: 100%;
+}
+
+.sideBar {
+  display: flex;
+  flex-direction: column;
+  width: 220px;
+  background: $gray-100;
+  padding: 14px 10px;
+  overflow-y: auto;
+  border-right: 1px solid $gray-200;
+
+  label {
+    font-weight:600;
+    margin-bottom: 30px;
+    font-size: 18px;
+  }
+
+  .primaryBtn {
+    margin-top:6px; padding:6px 10px;
+    background: $brand-dark; color:#fff;
+    border:none; border-radius:4px; cursor:pointer;
+    &:disabled { opacity:.4; }
+    &:hover:not(:disabled){ background:$brand-light; }
+  }
+
+  .imgRow { display:flex; align-items:center; margin-top:6px; }
+  .imgBtn { flex:1; @extend .imgBtn; }
+  .delBtn { @extend .delBtn; }
+  .hr { @extend .hr; }
+}
+
+.viewerPane { flex:1; position:relative; background:#000; }
+.viewerPane > div,
+.viewerPane canvas { width:100%!important; height:100%!important; }
+
+.sectionHr {
+  height: 1px;
+  background: $gray-300;
+  margin: 16px 0 12px;
+}
+
+.inlineRow {
+  margin-bottom: 12px;
+
+  input[type="file"] {
+    margin: 5px;
+  }
+  button{
+    margin: 5px;
+  }
+}
+
+.smallBtn {
+  padding: 6px 10px;
+  background: $brand-dark;
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  cursor: pointer;
+  &:disabled { opacity: .4; cursor: default; }
+  &:hover:not(:disabled) { background: $brand-light; }
+}
+
+.helpBox {
+  max-height: 70vh;
+  overflow-y: auto;
+  padding-right: 8px;      // Scrollbar-Puffer
+}
+
+
+
+/* ============================================================= */
+/*                  R  E  S  P  O  N  S  I  V  E                 */
+/* ============================================================= */
+
+/* 1) Default  —  ≥ 1600 px */
+/* ------------------------------------------------------------- */
+.wrapper       { grid-template-columns: 360px 1fr; }
+.creatorPane   { width: 360px;  }
+.canvasPane    { padding: 24px 32px; }
+.icon          { width: 36px; height: 36px; }
+
+/* 2) 1280-1599 px */
+/* ------------------------------------------------------------- */
+@media (max-width: 1599px) {
+  .wrapper     { grid-template-columns: 300px 1fr; }
+  .creatorPane { width: 300px;  }
+  .canvasPane  { padding: 20px 28px; }
+  .icon        { width: 32px;  height: 32px; }
+}
+
+/* 3) 992-1279 px */
+/* ------------------------------------------------------------- */
+@media (max-width: 1279px) {
+  .wrapper     { grid-template-columns: 260px 1fr; }
+  .creatorPane { width: 260px;  }
+  .canvasPane  { padding: 18px 24px; }
+  .pdfList     { gap: 6px;        }
+  .icon        { width: 28px;  height: 28px; }
+}
+
+
+@media (max-width: 1024px) {
+  .modalBody   { flex-direction: column; }
+  .sideBar     {
+    width: 100%; border-right: none; border-bottom: 1px solid #ddd;
+  }
+}
+
+/* 4) Dikey tablet  —  < 992 px */
+/* ------------------------------------------------------------- */
+@media (max-width: 991px) {
+  .wrapper     {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+  .creatorPane { order: 1; width: 100%; border-right: none; border-bottom:1px solid #ddd; }
+  .canvasPane  { order: 2; padding: 16px; }
+  .pdfList     { gap: 4px; }
+  
+  .canvasContainer { border-width: 0; box-shadow: none; }
+
+  .icon { width: 24px; height: 24px; }
+
+  .modalBody {
+    flex-direction: column;
+    width: 97%;
+  }
+}
