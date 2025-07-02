@@ -11,8 +11,8 @@
 
 All data is stored natively in SharePoint Online: one folder per project in the **Documents** library plus three helper lists.
 
-> *(Add a screenshot or GIF here to showcase the experience.)*
-
+![alt text](image.png)
+![alt text](image-1.png)
 ---
 
 ## Used SharePoint Framework Version
@@ -74,6 +74,13 @@ cd pdf360-spfx
 npm install
 gulp serve
 ```
+
+### Deployment (tenant admin)
+
+1. Package: **sharepoint/solution/pdf360-viewer.sppkg**  
+2. Upload to **Tenant App Catalog** (or Site Collection App Catalog).  
+3. When prompted, select **Make this solution available to all sites**.  
+4. After deployment the *pdf360-Viewer* web part can be added to any modern **Team** or **Communication** site.
 
 ## How to Use
 
