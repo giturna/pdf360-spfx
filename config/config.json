@@ -2,18 +2,18 @@
   "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/config.2.0.schema.json",
   "version": "2.0",
   "bundles": {
-    "baustelle-cams-web-part": {
+    "pdf360viewer-web-part": {
       "components": [
         {
-          "entrypoint": "./lib/webparts/baustelleCams/BaustelleCamsWebPart.js",
-          "manifest": "./src/webparts/baustelleCams/BaustelleCamsWebPart.manifest.json"
+          "entrypoint": "./lib/webparts/pdf360viewer/Pdf360ViewerWebPart.js",
+          "manifest": "./src/webparts/pdf360viewer/Pdf360ViewerWebPart.manifest.json"
         }
       ]
     }
   },
   "externals": {},
   "localizedResources": {
-    "BaustelleCamsWebPartStrings": "lib/webparts/baustelleCams/loc/{locale}.js",
+    "Pdf360ViewerWebPartStrings": "lib/webparts/pdf360viewer/loc/{locale}.js",
     "ControlStrings": "node_modules/@pnp/spfx-controls-react/lib/loc/{locale}.js"
   }
 }

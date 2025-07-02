@@ -1,5 +1,5 @@
 import * as React from 'react';
-import styles from './BaustelleCams.module.scss';
+import styles from './Pdf360Viewer.module.scss';
 import iconImg from '../assets/icon.png';
 
 export interface IIconMarkerProps {

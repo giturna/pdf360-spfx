@@ -1,6 +1,6 @@
 import { WebPartContext } from "@microsoft/sp-webpart-base";
 
-export interface IBaustelleCamsProps {
+export interface IPdf360ViewerProps {
   context: WebPartContext;
   description: string;
   isDarkTheme: boolean;

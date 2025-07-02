@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Modal, IconButton } from '@fluentui/react';
-import styles from './BaustelleCams.module.scss';
+import styles from './Pdf360Viewer.module.scss';
 import { PanoViewer } from './PanoramaViewer';
 
 export interface IIconModalProps {

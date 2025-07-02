@@ -2,7 +2,7 @@
  * IconManager.ts
  * ----------------------------------------------------------
  * Kapselt **alle** PDF‑/Icon‑bezogenen Daten‑Operationen und Drag‑N‑Drop‑Handler
- * der ursprünglichen *BaustelleCams.tsx*‑Komponente in eine eigenständige Klasse.
+ * der ursprünglichen *Pdf360Viewer.tsx*‑Komponente in eine eigenständige Klasse.
  */
 
 import { SPFI } from '@pnp/sp';
@@ -32,9 +32,9 @@ interface IconManagerDeps {
   docLibUrl: string;
   canvasWrapRef: React.RefObject<HTMLDivElement>;
   trashRef: React.RefObject<HTMLDivElement>;
-  /** React‑State auslesen (BaustelleCams.state) */
+  /** React‑State auslesen (Pdf360Viewer.state) */
   getState: () => any;
-  /** React‑State mutieren (BaustelleCams.setState) */
+  /** React‑State mutieren (Pdf360Viewer.setState) */
   setState: (update: any) => void;
 }
 

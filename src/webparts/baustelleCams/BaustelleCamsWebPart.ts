@@ -8,22 +8,22 @@ import {
 import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
 import { IReadonlyTheme } from '@microsoft/sp-component-base';
 
-import * as strings from 'BaustelleCamsWebPartStrings';
-import BaustelleCams from './components/BaustelleCams';
-import { IBaustelleCamsProps } from './components/IBaustelleCamsProps';
+import * as strings from 'Pdf360ViewerWebPartStrings';
+import Pdf360Viewer from './components/Pdf360Viewer';
+import { IPdf360ViewerProps } from './components/IPdf360ViewerProps';
 
-export interface IBaustelleCamsWebPartProps {
+export interface IPdf360ViewerWebPartProps {
   description: string;
 }
 
-export default class BaustelleCamsWebPart extends BaseClientSideWebPart<IBaustelleCamsWebPartProps> {
+export default class Pdf360ViewerWebPart extends BaseClientSideWebPart<IPdf360ViewerWebPartProps> {
 
   private _isDarkTheme: boolean = false;
   private _environmentMessage: string = '';
 
   public render(): void {
-    const element: React.ReactElement<IBaustelleCamsProps> = React.createElement(
-      BaustelleCams,
+    const element: React.ReactElement<IPdf360ViewerProps> = React.createElement(
+      Pdf360Viewer,
       {
         context:   this.context,
         description: this.properties.description,

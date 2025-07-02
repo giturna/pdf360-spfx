@@ -1,4 +1,4 @@
-declare interface IBaustelleCamsWebPartStrings {
+declare interface IPdf360ViewerWebPartStrings {
   PropertyPaneDescription: string;
   BasicGroupName: string;
   DescriptionFieldLabel: string;
@@ -13,7 +13,7 @@ declare interface IBaustelleCamsWebPartStrings {
   UnknownEnvironment: string;
 }
 
-declare module 'BaustelleCamsWebPartStrings' {
-  const strings: IBaustelleCamsWebPartStrings;
+declare module 'Pdf360ViewerWebPartStrings' {
+  const strings: IPdf360ViewerWebPartStrings;
   export = strings;
 }

@@ -1,6 +1,6 @@
 import * as React from 'react';
-import styles from './BaustelleCams.module.scss';
-import type { IBaustelleCamsProps } from './IBaustelleCamsProps';
+import styles from './Pdf360Viewer.module.scss';
+import type { IPdf360ViewerProps } from './IPdf360ViewerProps';
 import CreatorPanel from './CreatorPanel';
 import PdfCanvas from './PdfCanvas';
 import IconModal from './IconModal';
@@ -79,7 +79,7 @@ interface IState {
   showLoadForm: boolean;
 }
 
-export default class BaustelleCams extends React.Component<IBaustelleCamsProps, IState> {
+export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IState> {
 
   public _sp!: SPFI;
   public _docLibUrl!: string;
@@ -90,7 +90,7 @@ export default class BaustelleCams extends React.Component<IBaustelleCamsProps, 
   private _deleteCurrentPdf!: typeof Del.deleteCurrentPdf;
   private _deleteCurrentProject!: typeof Del.deleteCurrentProject;
 
-  constructor(props: IBaustelleCamsProps) {
+  constructor(props: IPdf360ViewerProps) {
     super(props);
     this._sp = spfi().using(SPFx(this.props.context));
     this._deleteIconImage      = Del.deleteIconImage.bind(this);
@@ -416,7 +416,7 @@ export default class BaustelleCams extends React.Component<IBaustelleCamsProps, 
   };
 
 
-  public render(): React.ReactElement<IBaustelleCamsProps> {
+  public render(): React.ReactElement<IPdf360ViewerProps> {
     const {
       projects,
       projectName,

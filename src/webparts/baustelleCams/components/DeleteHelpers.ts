@@ -1,6 +1,6 @@
 // DeleteHelpers.ts
 // --------------------------------------------------------------------------------------------------
-// Zentrale Sammlung aller Lösch‑Utilities für die BaustelleCams‑Komponente.
+// Zentrale Sammlung aller Lösch‑Utilities für die Pdf360Viewer‑Komponente.
 // --------------------------------------------------------------------------------------------------
 
 import type { SPFI } from '@pnp/sp';
