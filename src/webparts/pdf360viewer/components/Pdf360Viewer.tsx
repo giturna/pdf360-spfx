@@ -147,7 +147,25 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
     });
   }
 
+
+  private _debounce<T extends (...a:any)=>void>(fn:T, ms=0) {
+    let t: number;
+    return (...args: Parameters<T>) => {
+      clearTimeout(t);
+      t = window.setTimeout(() => fn(...args), ms);
+    };
+  }
+
+  private _onWinResize = this._debounce(() => {
+    const { pdfBuffer } = this.state;
+    if (pdfBuffer) {
+      this._renderPdf(pdfBuffer);
+    }
+  }, 150);
+
+
   public async componentDidMount(): Promise<void>{
+    window.addEventListener('resize', this._onWinResize);
     try {
       const raw = await this._sp.web.lists
         .getByTitle('Projekte')
@@ -160,6 +178,9 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
       console.error(e);
       this.setState({ status: `Fehler beim Laden der Projekte: ${e.message}` });
     }
+  }
+  componentWillUnmount() {
+    window.removeEventListener('resize', this._onWinResize);
   }
 
 
