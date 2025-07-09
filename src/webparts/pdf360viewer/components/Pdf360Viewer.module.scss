@@ -399,6 +399,15 @@ $gray-900:     #2d2d2d;
 }
 
 
+.iconWrap { position:absolute; transform:translate(-50%,-50%); }
+.iconTip  {
+  position:absolute; bottom:100%; left:50%; transform:translate(-50%,-4px);
+  background:#333; color:#fff; padding:2px 6px; font-size:12px;
+  border-radius:3px; white-space:nowrap; pointer-events:none;
+  opacity:0; transition:opacity .12s;
+}
+.iconWrap:hover .iconTip { opacity:1; }
+
 
 /* ============================================================= */
 /*                  R  E  S  P  O  N  S  I  V  E                 */

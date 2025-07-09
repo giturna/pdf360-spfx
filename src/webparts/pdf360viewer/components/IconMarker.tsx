@@ -12,6 +12,7 @@ export interface IIconMarkerProps {
     iconId: number
   ) => void;
   onClick: (iconId: number) => void;
+  title: string;
 }
 
 const IconMarker: React.FC<IIconMarkerProps> = ({
@@ -20,21 +21,29 @@ const IconMarker: React.FC<IIconMarkerProps> = ({
   yPercent,
   isDragging,
   onMouseDown,
-  onClick
+  onClick,
+  title
 }) => {
   return (
-    <img
-      src={iconImg}
-      className={styles.icon}
-      style={{
-        left: `${xPercent * 100}%`,
-        top: `${yPercent * 100}%`,
-        cursor: isDragging ? 'grabbing' : 'grab'
-      }}
-      onMouseDown={e => onMouseDown(e, iconLocId)}
-      onClick={() => onClick(iconLocId)}
-      draggable={false}
-    />
+    <div
+      key={iconLocId}
+      className={styles.iconWrap}
+      style={{ left:`${xPercent*100}%`, top:`${yPercent*100}%` }}
+    >
+      <img
+        src={iconImg}
+        className={styles.icon}
+        style={{
+          left: `${xPercent * 100}%`,
+          top: `${yPercent * 100}%`,
+          cursor: isDragging ? 'grabbing' : 'grab'
+        }}
+        onMouseDown={e => onMouseDown(e, iconLocId)}
+        onClick={() => onClick(iconLocId)}
+        draggable={false}
+      />
+      {title && <span className={styles.iconTip}>{title}</span>}
+    </div>
   );
 };
 

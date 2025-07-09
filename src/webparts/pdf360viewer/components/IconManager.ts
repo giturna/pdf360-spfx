@@ -18,6 +18,7 @@ export interface IconPosition {
   xPercent: number;
   yPercent: number;
   imageUrl: string;
+  title: string;
 }
 
 export interface IconImageRow {
@@ -66,7 +67,7 @@ export class IconManager {
       const locs = await this.sp.web.lists
         .getByTitle('IconLocations')
         .items
-        .select('ID','XPercent','YPercent')
+        .select('ID','XPercent','YPercent','Title')
         .filter(`PdfFileId eq ${pdfItemId}`)();
 
       /* 2) Je Position das erste 360‑Bild ermitteln */
@@ -91,7 +92,8 @@ export class IconManager {
           iconLocId: loc.ID,
           xPercent:  loc.XPercent,
           yPercent:  loc.YPercent,
-          imageUrl
+          imageUrl,
+          title:loc.Title
         };
       }));
 
@@ -111,7 +113,8 @@ export class IconManager {
       selectedProjectName,
       currentPdfItemId,
       newImageFile,
-      selectedProjectId
+      selectedProjectId,
+      newIconTitle=''
     } = st;
 
     if (!selectedProjectName || !currentPdfItemId || !newImageFile || !selectedProjectId) {
@@ -129,15 +132,17 @@ export class IconManager {
       await imgItem.update({ FileType: 'Image360' });
       const imgId = (await imgItem()).Id;
 
+      const iconFolderName = await this._getNextIconFolderName(selectedProjectName);
+      const iconTitle = newIconTitle.trim() || iconFolderName;
+
       /* 2 | Position (0.5/0.5) anlegen */
-      const locRes = await this.sp.web.lists
-        .getByTitle('IconLocations')
+      const locRes = await this.sp.web.lists.getByTitle('IconLocations')
         .items.add({
           ProjectId: selectedProjectId,
           PdfFileId: currentPdfItemId,
           XPercent: 0.5,
           YPercent: 0.5,
-          Title: `Icon_${Date.now()}`
+          Title: iconTitle
         });
       const iconLocId = locRes.data.ID;
 
@@ -157,9 +162,11 @@ export class IconManager {
           iconLocId,
           xPercent: 0.5,
           yPercent: 0.5,
-          imageUrl: ServerRelativeUrl
+          imageUrl: ServerRelativeUrl,
+          title: iconTitle
         }),
         newImageFile: null,
+        newIconTitle: '',
         status: '✅ Icon wurde hinzugefügt.'
       }));
     } catch (e: any) {
@@ -361,5 +368,22 @@ export class IconManager {
       showTrash:    false,
       trashHover:   false
     });
+  };
+
+  /* ---------------------------------------------------------------------------
+   *  Hilfs‑Methode: nächster Icon_N Ordnername                                   
+   * --------------------------------------------------------------------------*/
+  private _getNextIconFolderName = async (projectName: string): Promise<string> => {
+    const subs = await this.sp.web
+      .getFolderByServerRelativePath(`${this.url}/${projectName}`)
+      .folders.select('Name')();
+
+    const last = (subs as any[])
+      .map(f => /^Icon_(\d+)$/.exec(f.Name))
+      .filter(Boolean)
+      .map(m => parseInt(m![1], 10))
+      .reduce((max, n) => Math.max(max, n), 0);
+
+    return `Icon_${last + 1}`;
   };
 }

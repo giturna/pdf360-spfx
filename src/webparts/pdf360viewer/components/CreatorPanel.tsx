@@ -13,6 +13,7 @@ export interface ICreatorPanelProps {
   projects: IDropdownOption[];
   selectedProjectId?: number;
   status: string;
+  newIconTitle: string;
 
   /* ---------------- callbacks ------------------ */
   onToggleCreateForm: () => void;
@@ -26,6 +27,7 @@ export interface ICreatorPanelProps {
   onUploadPdf: () => Promise<void>;
   onNewImageChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onAddIcon: () => Promise<void>;
+  onIconTitleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 const CreatorPanel: React.FC<ICreatorPanelProps> = ({
@@ -47,7 +49,9 @@ const CreatorPanel: React.FC<ICreatorPanelProps> = ({
   onNewPdfChange,
   onUploadPdf,
   onNewImageChange,
-  onAddIcon
+  onAddIcon,
+  newIconTitle,
+  onIconTitleChange
 }) => {
   return (
     <div className={styles.creatorPane}>
@@ -143,6 +147,13 @@ const CreatorPanel: React.FC<ICreatorPanelProps> = ({
 
           {/* -------- 360° Bild + Icon -------- */}
           <label>360°‑Bild mit neuem Icon hinzufügen</label>
+          <label>Icon-Titel (optional)</label>
+          <input
+            type="text"
+            value={newIconTitle}
+            onChange={onIconTitleChange}
+            className={styles.textInput}
+          />
           <div className={styles.inlineRow}>
             <input
               type="file"

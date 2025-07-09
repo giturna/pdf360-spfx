@@ -10,6 +10,7 @@ export interface IPdfCanvasProps {
     xPercent: number;
     yPercent: number;
     imageUrl: string;
+    title: string;
   }>;
   dragIconId?: number;
   showTrash?: boolean;
@@ -81,6 +82,7 @@ const PdfCanvas: React.FC<IPdfCanvasProps> = ({
             isDragging={dragIconId === ic.iconLocId}
             onMouseDown={onIconMouseDown}
             onClick={onIconClick}
+            title={ic.title}
         />
         ))}
 

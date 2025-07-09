@@ -50,7 +50,9 @@ interface IState {
     xPercent: number;
     yPercent: number;
     imageUrl: string;
+    title: string;
   }>;
+  newIconTitle: string;
 
   isModalOpen: boolean;
   modalImageUrl: string | null;
@@ -114,6 +116,7 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
 
       newImageFile: null,
       icons: [],
+      newIconTitle: '',
 
       isModalOpen: false,
       modalImageUrl: null,
@@ -319,6 +322,9 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
   private _onNewIconImage = (e: React.ChangeEvent<HTMLInputElement>): void => {
     this.setState({ uploadingImage: e.target.files?.[0] ?? null });
   };
+  private _onIconTitleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    this.setState({ newIconTitle: e.target.value })
+  };
 
 
   private _uploadPdfToProject = async (): Promise<void> => {
@@ -477,6 +483,8 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
           onUploadPdf={this._uploadPdfToProject}
           onNewImageChange={this._onNewImageChange}
           onAddIcon={this._icons.addIcon}
+          newIconTitle={this.state.newIconTitle}
+          onIconTitleChange={this._onIconTitleChange}
           status={status}
         />
         {/* ========== RECHTES PANEL – PDF- & Icon-Flow ========== */}
