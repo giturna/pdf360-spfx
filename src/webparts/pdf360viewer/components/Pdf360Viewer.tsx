@@ -91,6 +91,7 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
   private _deleteIconImage!: typeof Del.deleteIconImage;
   private _deleteCurrentPdf!: typeof Del.deleteCurrentPdf;
   private _deleteCurrentProject!: typeof Del.deleteCurrentProject;
+  private _currentPdfRender?: pdfjsLib.RenderTask;
 
   constructor(props: IPdf360ViewerProps) {
     super(props);
@@ -288,26 +289,39 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
     const loadingTask = pdfjsLib.getDocument({ data });
     const pdf  = await loadingTask.promise;
     const page = await pdf.getPage(1);
-  
+
     const container = this._canvasWrapRef.current;
     if (!container) return;
-  
-    /* 1) Die Breite des Containers wird als Referenz genommen */
+
     const targetWidth = container.clientWidth;
-  
     const unscaled = page.getViewport({ scale: 1 });
     const scale    = targetWidth / unscaled.width;
-  
     const vp   = page.getViewport({ scale });
+
     const c    = document.getElementById('pdfCanvas') as HTMLCanvasElement;
     const ctx  = c.getContext('2d')!;
-  
+
     c.width  = vp.width;
     c.height = vp.height;
-  
-    await page.render({ canvasContext: ctx, viewport: vp }).promise;
-    /* Canvas ist fertig — gleicht die Höhe des Wrappers an */
-    this._canvasWrapRef.current!.style.height = `${vp.height}px`;
+
+    // Önceki render varsa iptal et
+    if (this._currentPdfRender) {
+      try { this._currentPdfRender.cancel(); } catch {}
+    }
+
+    const renderTask = page.render({ canvasContext: ctx, viewport: vp });
+    this._currentPdfRender = renderTask;
+
+    try {
+      await renderTask.promise; // iptal edilirse burada throw eder
+    } catch (e) {
+      // iptal beklenen bir durum, sessiz geç
+    } finally {
+      if (this._currentPdfRender === renderTask) {
+        this._currentPdfRender = undefined;
+      }
+      this._canvasWrapRef.current!.style.height = `${vp.height}px`;
+    }
   }
 
   private _onNameChange = (e:React.ChangeEvent<HTMLInputElement>): void => {

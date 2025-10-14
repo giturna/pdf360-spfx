@@ -2,6 +2,7 @@ import * as React from 'react';
 import { Modal, IconButton } from '@fluentui/react';
 import styles from './Pdf360Viewer.module.scss';
 import { PanoViewer } from './PanoramaViewer';
+import { DualPanoViewer } from './DualPanoViewer';
 
 export interface IIconModalProps {
   /* visibility */
@@ -42,6 +43,22 @@ const IconModal: React.FC<IIconModalProps> = ({
   onSelectImage,
   onDeleteIconImage
 }) => {
+
+  const [selected, setSelected] = React.useState<string[]>([]);
+  React.useEffect(() => {
+    // Modal her açıldığında reset
+    if (isOpen) setSelected([]);
+  }, [isOpen]);
+
+  const toggle = (url: string) => {
+    setSelected(prev => {
+      const has = prev.includes(url);
+      if (has) return prev.filter(u => u !== url);
+      if (prev.length === 2) return [prev[1], url]; // max 2 tut
+      return [...prev, url];
+    });
+  };
+
   return (
     <Modal
       isOpen={isOpen}
@@ -88,6 +105,13 @@ const IconModal: React.FC<IIconModalProps> = ({
               >
                 {img.fileName}
               </button>
+              <input
+                 type="checkbox"
+                 style={{ marginLeft: 8 }}
+                 checked={selected.includes(img.url)}
+                 onChange={() => toggle(img.url)}
+                 title="Zum Vergleich auswählen (max. 2)"
+               />
               <button
                 className={styles.delBtn}
                 onClick={() =>
@@ -102,7 +126,9 @@ const IconModal: React.FC<IIconModalProps> = ({
 
         {/* -------- RECHTS: 360° VIEWER -------- */}
         <div className={styles.viewerPane}>
-          {modalImageUrl ? (
+          {selected.length === 2 ? (
+            <DualPanoViewer leftSrc={selected[0]} rightSrc={selected[1]} linkRotations />
+          ) : modalImageUrl ? (
             <PanoViewer src={modalImageUrl} />
           ) : (
             <p>Das anzuzeigende Bild konnte nicht gefunden werden.</p>
