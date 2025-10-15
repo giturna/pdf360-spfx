@@ -46,7 +46,7 @@ const IconModal: React.FC<IIconModalProps> = ({
 
   const [selected, setSelected] = React.useState<string[]>([]);
   React.useEffect(() => {
-    // Modal her açıldığında reset
+    // bei jedem Öffnen des Modals zurücksetzen
     if (isOpen) setSelected([]);
   }, [isOpen]);
 

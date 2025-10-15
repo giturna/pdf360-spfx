@@ -23,7 +23,7 @@ function sizeForCover(box: HTMLElement, srcAspect = 2 / 1) {
 }
 
 const setupOne = (container: HTMLDivElement, src: string) => {
-  // --- COVER + DPR aware ölçülendirme ---
+  // --- COVER + DPR-bewusste Größenanpassung ---
   const computeAndApplySize = (renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera) => {
     const { w, h } = sizeForCover(container, 2 / 1);
     const dpr = Math.min(window.devicePixelRatio || 1, 2);

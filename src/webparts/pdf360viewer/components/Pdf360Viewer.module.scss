@@ -390,12 +390,11 @@ $gray-900:     #2d2d2d;
 .panoBox canvas,
 .panoBox > .psv-container,      /* PhotoSphereViewer */
 .panoBox > .pnlm-container,     /* Pannellum */
-.panoBox > div                  /* olası iç sarıcı */
+.panoBox > div                  /* möglicher innerer Wrapper */
 {
   position:absolute;
   top:50%; left:50%;
   transform:translate(-50%,-50%);
-  /* cover etkisi */
   //min-width:100%;
   //min-height:100%;
   width:auto !important;
