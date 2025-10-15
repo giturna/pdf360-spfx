@@ -2,9 +2,36 @@ import React, { useRef, useEffect } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
+export function attachFovWheelZoom(
+  canvasEl: HTMLCanvasElement,
+  camera: THREE.PerspectiveCamera,
+  opts: { minFov?: number; maxFov?: number; step?: number } = {}
+) {
+  const minFov = opts.minFov ?? 30;   // Nah-Zoom-Grenze (kleineres FOV = näher)
+  const maxFov = opts.maxFov ?? 90;   // Weitwinkelgrenze
+  const step   = opts.step   ?? 1.5;  // wie viele Grad sich bei jedem Wheel-„Tick“ ändern sollen
+
+  const onWheel = (e: WheelEvent) => {
+    e.preventDefault(); // das Scrollen der Seite verhindern
+    const dir = Math.sign(e.deltaY);         // unten (+) / oben (–)
+    const next = THREE.MathUtils.clamp(camera.fov + dir * step, minFov, maxFov);
+    if (next !== camera.fov) {
+      camera.fov = next;
+      camera.updateProjectionMatrix();
+    }
+  };
+
+  canvasEl.addEventListener('wheel', onWheel, { passive: false });
+
+  // cleanup
+  return () => {
+    canvasEl.removeEventListener('wheel', onWheel as any);
+  };
+}
+
 interface Props {
   src: string;          // 360 JPEG / PNG (2 : 1)
-  height?: string;      // CSS height – default 400 px
+  height?: string;      // CSS-Höhe – Standard 400 px
 }
 
 export const PanoViewer: React.FC<Props> = ({ src }) => {
@@ -34,7 +61,13 @@ useEffect(() => {
     controls.rotateSpeed  = 0.5;
     controls.zoomSpeed    = 0.6;
 
-    // --- Load texture & add sphere ---
+    const disposeWheel = attachFovWheelZoom(renderer.domElement, camera, {
+      minFov: 30,
+      maxFov: 90,
+      step: 1.5
+    });
+
+    // --- Textur laden & Sphere hinzufügen ---
     let animationId = 0;
     new THREE.TextureLoader().load(src, texture => {
       const geo  = new THREE.SphereGeometry(50, 64, 64);
@@ -42,7 +75,7 @@ useEffect(() => {
       const mat  = new THREE.MeshBasicMaterial({ map: texture });
       scene.add(new THREE.Mesh(geo, mat));
 
-      // render loop
+      // render schleife
       const renderLoop = (): void => {
         controls.update();
         renderer.render(scene, camera);
@@ -53,6 +86,7 @@ useEffect(() => {
 
     // --- Cleanup ---
     return () => {
+      disposeWheel?.();
       cancelAnimationFrame(animationId);
       renderer.dispose();
       while (ref.current!.firstChild) {

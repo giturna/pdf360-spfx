@@ -2,25 +2,49 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import styles from './Pdf360Viewer.module.scss';
+import { attachFovWheelZoom } from './PanoramaViewer';
 
 interface Props {
   leftSrc: string;
   rightSrc: string;
-  height?: number;     // px, default: half of container width
-  linkRotations?: boolean; // true: sync rotations
+  height?: number;     // px, Standardwert: die Hälfte der Containerbreite
+  linkRotations?: boolean; // true: Rotationen synchronisieren
+}
+
+function sizeForCover(box: HTMLElement, srcAspect = 2 / 1) {
+  const { width: W, height: H } = box.getBoundingClientRect();
+  if (!W || !H) return { w: 0, h: 0 };
+  if (W / H > srcAspect) {
+    return { w: Math.round(W), h: Math.round(W / srcAspect) }; // füllt die Breite aus, schneidet vertikal ab
+  } else {
+    return { h: Math.round(H), w: Math.round(H * srcAspect) }; // füllt die Höhe aus, schneidet horizontal ab
+  }
 }
 
 const setupOne = (container: HTMLDivElement, src: string) => {
-  const w = container.clientWidth;
-  const h = Math.floor(w / 2);
+  // --- COVER + DPR aware ölçülendirme ---
+  const computeAndApplySize = (renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera) => {
+    const { w, h } = sizeForCover(container, 2 / 1);
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    renderer.setPixelRatio(dpr);
+    renderer.setSize(w, h, false);                 // interne Auflösung
+    renderer.domElement.style.width  = `${w}px`;   // kein CSS-Zoom
+    renderer.domElement.style.height = `${h}px`;
+    camera.aspect = w / h || 1;
+    camera.updateProjectionMatrix();
+  };
 
   const renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setSize(w, h);
+  renderer.domElement.style.display = 'block';
   container.appendChild(renderer.domElement);
 
   const scene  = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(75, w / h, 0.1, 1000);
+  const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
   camera.position.set(0, 0, 0.1);
+
+  // erste Größenanpassung
+  computeAndApplySize(renderer, camera);
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableZoom  = true;
@@ -47,8 +71,13 @@ const setupOne = (container: HTMLDivElement, src: string) => {
     loop();
   });
 
+  // Resize-Observer – wendet „cover + dpr“ erneut an, wenn sich die Box ändert
+  const ro = new ResizeObserver(() => computeAndApplySize(renderer, camera));
+  ro.observe(container);
+
   const dispose = () => {
     cancelAnimationFrame(anim);
+    ro.disconnect();
     renderer.dispose();
     while (container.firstChild) container.removeChild(container.firstChild);
     if (mesh) {
@@ -69,31 +98,38 @@ export const DualPanoViewer: React.FC<Props> = ({ leftSrc, rightSrc, linkRotatio
 
     const L = setupOne(leftRef.current, leftSrc);
     const R = setupOne(rightRef.current, rightSrc);
-
-    //let syncing = false;
+    const disposeWheelL = attachFovWheelZoom(L.renderer.domElement, L.camera);
+    const disposeWheelR = attachFovWheelZoom(R.renderer.domElement, R.camera);
 
     if (linkRotations) {
-        let leader: 'L' | 'R' | null = null;  // şu an kim sürüklüyor?
+        let leader: 'L' | 'R' | null = null;  // wer zieht gerade?
 
         const tmpSpherical = new THREE.Spherical();
         const tmpVec = new THREE.Vector3();
 
         const syncFromTo = (src: any, dst: any) => {
-            // 1) target'ı hizala
+            // 1) das Ziel ausrichten
             if (src.target && dst.target && typeof dst.target.copy === 'function') {
-            dst.target.copy(src.target);
+              dst.target.copy(src.target);
             }
 
-            // 2) src kameranın target'a göre offset'ini al → spherical
+            // 2) den Versatz der Quelle relativ zum Ziel erfassen → sphärisch
             tmpVec.copy(src.object.position).sub(src.target);
             tmpSpherical.setFromVector3(tmpVec);
 
-            // 3) dst kamerayı aynı spherical + kendi (artık kopyalanmış) target'a göre konumlandır
+            // 3) die Zielkamera anhand derselben sphärischen Koordinaten + ihres (nun kopierten) Ziels positionieren
             tmpVec.setFromSpherical(tmpSpherical);
             dst.object.position.copy(dst.target).add(tmpVec);
 
-            // 4) kamerayı hedefe baktır ve kontrolü güncelle
+            // 4) die Kamera auf das Ziel ausrichten
             dst.object.lookAt(dst.target);
+
+            if (dst.object && src.object && typeof dst.object.updateProjectionMatrix === 'function') {
+              dst.object.fov = src.object.fov;
+              dst.object.updateProjectionMatrix();
+            }
+
+            // Update aktualisieren
             dst.update?.();
         };
 
@@ -110,7 +146,6 @@ export const DualPanoViewer: React.FC<Props> = ({ leftSrc, rightSrc, linkRotatio
             syncFromTo(R.controls as any, L.controls as any);
         };
 
-        // damping açıksa change sık gelir; sorun değil, lider filtresi var
         L.controls.addEventListener('start', onStartL);
         L.controls.addEventListener('end', onEnd);
         L.controls.addEventListener('change', onChangeL);
@@ -133,13 +168,18 @@ export const DualPanoViewer: React.FC<Props> = ({ leftSrc, rightSrc, linkRotatio
         };
         }
 
-    return () => { L.dispose(); R.dispose(); };
+    return () => {
+      disposeWheelL?.();
+      disposeWheelR?.();
+      L.dispose();
+      R.dispose();
+    };
   }, [leftSrc, rightSrc, linkRotations]);
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, width: '100%' }}>
-      <div ref={leftRef} style={{ width: '100%' }} />
-      <div ref={rightRef} style={{ width: '100%' }} />
-    </div>
-  );
+        <div className={styles.panoRow}>
+            <div className={styles.panoBox}      ref={leftRef}  />
+            <div className={styles.panoBox}      ref={rightRef} />
+        </div>
+    );
 };

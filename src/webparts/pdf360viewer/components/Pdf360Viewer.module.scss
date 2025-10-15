@@ -308,9 +308,10 @@ $gray-900:     #2d2d2d;
 
 /* ---------- MODAL ---------- */
 .modalHost {
-  width: 90vw; height: 85vh;
-  max-width: 90vw;
-  max-height: 85vh;
+  width: 180vw;
+  height: 180vh;
+  /*max-width: 90vw;*/
+  /*max-height: 85vh;*/
   display: flex; flex-direction: column; overflow: hidden;
   border-radius: 8px;
   box-shadow: 0 6px 24px rgba(0,0,0,.3);
@@ -360,9 +361,49 @@ $gray-900:     #2d2d2d;
   .hr { @extend .hr; }
 }
 
-.viewerPane { flex:1; position:relative; background:#000; }
+.viewerPane {
+  flex:1;
+  position:relative;
+  align-content: center;
+  background:#000;
+}
 .viewerPane > div,
-.viewerPane canvas { width:100%!important; height:100%!important; }
+/*.viewerPane canvas { width:100%!important; height:100%!important; }*/
+.viewerPane canvas { height:auto!important; }
+
+.panoRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.panoBox {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: #000;
+  overflow: hidden;
+}
+
+.panoBox.square { aspect-ratio: 1 / 1; }
+
+.panoBox canvas,
+.panoBox > .psv-container,      /* PhotoSphereViewer */
+.panoBox > .pnlm-container,     /* Pannellum */
+.panoBox > div                  /* olası iç sarıcı */
+{
+  position:absolute;
+  top:50%; left:50%;
+  transform:translate(-50%,-50%);
+  /* cover etkisi */
+  //min-width:100%;
+  //min-height:100%;
+  width:auto !important;
+  height:auto !important;
+}
+
+
+
 
 .sectionHr {
   height: 1px;
