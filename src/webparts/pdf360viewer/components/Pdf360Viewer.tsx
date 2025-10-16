@@ -79,6 +79,14 @@ interface IState {
 
   showCreateForm: boolean;
   showLoadForm: boolean;
+
+  // folders
+  showFolderPanel: boolean;
+  showIconPanel: boolean;
+  subfolders: IDropdownOption[];     // key: string ('' = wurzel); text: angezeigte Name
+  selectedSubfolder?: string;        // '' oder undefined = wurzel
+  folderNameInput: string;
+  folderRenameInput: string;
 }
 
 export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IState> {
@@ -92,6 +100,7 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
   private _deleteCurrentPdf!: typeof Del.deleteCurrentPdf;
   private _deleteCurrentProject!: typeof Del.deleteCurrentProject;
   private _currentPdfRender?: pdfjsLib.RenderTask;
+  private _deleteCurrentSubfolder!: typeof Del.deleteCurrentSubfolder;
 
   constructor(props: IPdf360ViewerProps) {
     super(props);
@@ -99,6 +108,7 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
     this._deleteIconImage      = Del.deleteIconImage.bind(this);
     this._deleteCurrentPdf     = Del.deleteCurrentPdf.bind(this);
     this._deleteCurrentProject = Del.deleteCurrentProject.bind(this);
+    this._deleteCurrentSubfolder = Del.deleteCurrentSubfolder.bind(this);
     const webRel = this.props.context.pageContext.web.serverRelativeUrl;
     this._docLibUrl = `${webRel}/Shared Documents`; // 'Freigegebene Dokumente' oder 'Shared Documents' (Hängt von der Site-Sprache ab)
     
@@ -138,7 +148,15 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
       saving: false,
 
       showCreateForm: false,
-      showLoadForm: false
+      showLoadForm: false,
+
+      // folders
+      showFolderPanel: false,
+      showIconPanel: false,
+      subfolders: [],
+      selectedSubfolder: '',
+      folderNameInput: '',
+      folderRenameInput: '',
     };
 
     this._icons = new IconManager({
@@ -150,6 +168,21 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
       setState:      this.setState.bind(this)
     });
   }
+
+  private _currentFolderPath(projectName: string, subfolder?: string): string {
+    const base = `${this._docLibUrl}/${projectName}`;
+    const key  = (subfolder ?? this.state.selectedSubfolder ?? '').trim();
+    const sub  = key ? `/${key}` : '';
+    return `${base}${sub}`;
+  }
+
+  private _subfolderStorageKey(projectName: string): string {
+    return `Pdf360Viewer.subfolder.${projectName}`;
+  }
+
+  private _toggleIconPanel = (): void => {
+    this.setState(prev => ({ showIconPanel: !prev.showIconPanel }));
+  };
 
 
   private _debounce<T extends (...a:any)=>void>(fn:T, ms=0) {
@@ -188,10 +221,12 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
   }
 
 
-  private _loadProjectDocs = async (projectName: string)
-    : Promise<{ FileRef:string; FileLeafRef:string }[]> => {
+  private _loadProjectDocs = async (
+    projectName: string,
+    subfolder?: string
+  ): Promise<{ FileRef:string; FileLeafRef:string }[]> => {
 
-    const folderPath = `${this._docLibUrl}/${projectName}`;
+    const folderPath = this._currentFolderPath(projectName, subfolder);
     const files = await this._sp.web
       .getFolderByServerRelativePath(folderPath)
       .files();
@@ -202,6 +237,21 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
         FileRef:     f.ServerRelativeUrl,
         FileLeafRef: f.Name
       }));
+  };
+
+  private _loadSubfolders = async (projectName: string): Promise<IDropdownOption[]> => {
+    const basePath = `${this._docLibUrl}/${projectName}`;
+    const folders = await this._sp.web
+      .getFolderByServerRelativePath(basePath)
+      .folders();
+
+    // Option „(Wurzel)“ + Unterordner
+    const opts: IDropdownOption[] = [
+      { key: '', text: '(Home-Ordner)' },
+      ...((folders as any[]) || []).map(f => ({ key: f.Name as string, text: f.Name as string })),
+    ];
+    this.setState({ subfolders: opts });
+    return opts;
   };
   
   
@@ -223,7 +273,19 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
       status:              '⏳ PDF wird geladen…'
     });
   
+    // Unterordner einbinden und mit Wurzel beginnen
+    await this._loadSubfolders(projectName);
+    this.setState({ selectedSubfolder: '' });
+    // Wenn ein gespeicherter Unterordner vorhanden ist, dort beginnen
+    const savedSub = localStorage.getItem(this._subfolderStorageKey(projectName)) || '';
+    if (savedSub) {
+      this.setState({ selectedSubfolder: savedSub });
+      // Lade die PDFs aus diesem Ordner, indem du die Dropdown-Auswahl simulierst
+      await this._onSubfolderChange(null as any, { key: savedSub, text: savedSub } as any);
+      return; // Überspringe den Ladevorgang vom Stammverzeichnis
+    }
     try {
+      
       // 2) Der Pfad zum projektbezogenen Ordner
       const folderPath = `${this._docLibUrl}/${projectName}`;
   
@@ -275,9 +337,140 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
   };
 
 
+
+    private _toggleFolderPanel = (): void => {
+    this.setState(prev => ({ showFolderPanel: !prev.showFolderPanel }));
+  };
+
+  private _onFolderNameChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    this.setState({ folderNameInput: e.target.value });
+  };
+
+  private _createSubfolder = async (): Promise<void> => {
+    const { selectedProjectName, folderNameInput } = this.state;
+    if (!selectedProjectName || !folderNameInput.trim()) return;
+
+    this.setState({ saving: true, status: 'Ordner wird erstellt…' });
+    try {
+      const parent = `${this._docLibUrl}/${selectedProjectName}`;
+      await this._sp.web
+        .getFolderByServerRelativePath(parent)
+        .folders.addUsingPath(folderNameInput.trim());
+
+      await this._loadSubfolders(selectedProjectName);
+      this.setState({ status: '✅ Ordner erstellt.', folderNameInput: '' });
+    } catch (e: any) {
+      console.error(e);
+      this.setState({ status: `🚫 Ordner konnte nicht erstellt werden: ${e.message}` });
+    } finally {
+      this.setState({ saving: false });
+    }
+  };
+
+  private _onSubfolderChange = async (_: any, o?: IDropdownOption): Promise<void> => {
+    if (!o) return;
+    const folderKey = (o.key as string) ?? '';
+    const { selectedProjectName } = this.state;
+    if (!selectedProjectName) return;
+
+    // Persistieren
+    localStorage.setItem(this._subfolderStorageKey(selectedProjectName), folderKey);
+
+    // Statusanzeige und Symbole löschen
+    this.setState({
+      selectedSubfolder: folderKey,
+      folderRenameInput: folderKey,
+      status: '⏳ PDF wird geladen…',
+      icons: []
+    });
+
+    try {
+      const docs = await this._loadProjectDocs(selectedProjectName, folderKey);
+      this.setState({ projectDocs: docs });
+
+      if (docs.length === 0) {
+        this.setState({
+          pdfBuffer: null,
+          currentPdfItemId: undefined,
+          status: '⚠️ Dieser Ordner enthält keine PDFs.'
+        });
+        return;
+      }
+
+      const firstRef = docs[0].FileRef;
+      const buf = await this._sp.web.getFileByServerRelativePath(firstRef).getBuffer();
+      this.setState({ pdfBuffer: buf, status: '' });
+      await this._renderPdf(buf);
+
+      const pdfItem = await this._sp.web
+        .getFileByServerRelativePath(firstRef)
+        .getItem<{ Id: number }>('Id');
+      const { Id: pdfItemId } = await pdfItem();
+      this.setState({ currentPdfItemId: pdfItemId });
+
+      await this._icons.loadIconsForPdf(pdfItemId);
+    } catch (e: any) {
+      console.error(e);
+      this.setState({ status: `🚫 Fehler beim Laden der PDF: ${e.message}` });
+    }
+  };
+
+
+  private _renameCurrentSubfolder = async (): Promise<void> => {
+    const { selectedProjectName, selectedSubfolder, folderRenameInput } = this.state;
+    const oldName = (selectedSubfolder ?? '').trim();
+    const newName = (folderRenameInput ?? '').trim();
+
+    if (!selectedProjectName || !oldName) {
+      this.setState({ status: '❗ Bitte zuerst einen Unterordner wählen.' });
+      return;
+    }
+    if (!newName || newName === oldName) {
+      this.setState({ status: '❗ Neuer Name ist leer oder unverändert.' });
+      return;
+    }
+
+    this.setState({ saving: true, status: `Unterordner wird umbenannt… (${oldName} → ${newName})` });
+    try {
+      const base = `${this._docLibUrl}/${selectedProjectName}`;
+      const oldPath = `${base}/${oldName}`;
+      const newPath = `${base}/${newName}`;
+
+      await this._sp.web.getFolderByServerRelativePath(oldPath).moveByPath(newPath);
+
+      // Liste aktualisieren und Auswahl sowie localStorage auf den neuen Namen übertragen
+      await this._loadSubfolders(selectedProjectName);
+      localStorage.setItem(this._subfolderStorageKey(selectedProjectName), newName);
+
+      this.setState({
+        selectedSubfolder: newName,
+        folderRenameInput: newName,
+        status: '✅ Unterordner wurde umbenannt.'
+      });
+
+      // Wenn die PDFs aus diesem Ordner aufgelistet sind, erneut laden
+      const docs = await this._loadProjectDocs(selectedProjectName, newName);
+      this.setState({ projectDocs: docs });
+
+    } catch (e: any) {
+      console.error(e);
+      this.setState({ status: `🚫 Umbenennen fehlgeschlagen: ${e.message}` });
+    } finally {
+      this.setState({ saving: false });
+    }
+  };
+
+
+
+
+
   private _onNewImageChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     this.setState({ newImageFile: e.target.files?.[0] ?? null });
   }
+    private _onFolderRenameChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    this.setState({ folderRenameInput: e.target.value });
+  };
+
 
 
   private _closeModal = (): void => {
@@ -304,7 +497,7 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
     c.width  = vp.width;
     c.height = vp.height;
 
-    // Önceki render varsa iptal et
+    // Falls eine vorherige Renderung vorhanden ist, abbrechen
     if (this._currentPdfRender) {
       try { this._currentPdfRender.cancel(); } catch {}
     }
@@ -313,9 +506,9 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
     this._currentPdfRender = renderTask;
 
     try {
-      await renderTask.promise; // iptal edilirse burada throw eder
+      await renderTask.promise; // Wenn abgebrochen wird, wird hier ein Fehler ausgelöst
     } catch (e) {
-      // iptal beklenen bir durum, sessiz geç
+      // Abbruch ist ein erwarteter Zustand, still überspringen
     } finally {
       if (this._currentPdfRender === renderTask) {
         this._currentPdfRender = undefined;
@@ -351,7 +544,7 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
     this.setState({ saving: true, status: 'Wird geladen…' });
     try {
       // Zielordnerpfad: „Freigegebene Dokumente/Projektname“
-      const folderPath = `${this._docLibUrl}/${selectedProjectName}`;
+      const folderPath = this._currentFolderPath(selectedProjectName);
   
       // 1) Die PDF-Datei in den entsprechenden Projektordner hochladen
       const fileRes = await this._sp.web
@@ -500,6 +693,23 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
           newIconTitle={this.state.newIconTitle}
           onIconTitleChange={this._onIconTitleChange}
           status={status}
+
+          showIconPanel={this.state.showIconPanel}
+          onToggleIconPanel={this._toggleIconPanel}
+
+          /* --- folders --- */
+          showFolderPanel={this.state.showFolderPanel}
+          onToggleFolderPanel={this._toggleFolderPanel}
+          subfolders={this.state.subfolders}
+          selectedSubfolder={this.state.selectedSubfolder}
+          folderNameInput={this.state.folderNameInput}
+          onFolderNameChange={this._onFolderNameChange}
+          onCreateSubfolder={this._createSubfolder}
+          onSubfolderChange={this._onSubfolderChange}
+          folderRenameInput={this.state.folderRenameInput}
+          onFolderRenameChange={this._onFolderRenameChange}
+          onRenameSubfolder={this._renameCurrentSubfolder}
+          onDeleteSubfolder={this._deleteCurrentSubfolder}
         />
         {/* ========== RECHTES PANEL – PDF- & Icon-Flow ========== */}
         <div className={styles.canvasPane}>

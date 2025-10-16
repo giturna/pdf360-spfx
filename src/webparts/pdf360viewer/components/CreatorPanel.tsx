@@ -28,6 +28,24 @@ export interface ICreatorPanelProps {
   onNewImageChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onAddIcon: () => Promise<void>;
   onIconTitleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+
+  showIconPanel: boolean;
+  onToggleIconPanel: () => void;
+
+  /* --- folders --- */
+  showFolderPanel: boolean;
+  onToggleFolderPanel: () => void;
+  subfolders: IDropdownOption[];
+  selectedSubfolder?: string;
+  folderNameInput: string;
+  onFolderNameChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onCreateSubfolder: () => Promise<void>;
+  onSubfolderChange: (_: any, o?: IDropdownOption) => void;
+
+  folderRenameInput: string;
+  onFolderRenameChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onRenameSubfolder: () => Promise<void>;
+  onDeleteSubfolder: () => Promise<void>;
 }
 
 const CreatorPanel: React.FC<ICreatorPanelProps> = ({
@@ -51,7 +69,22 @@ const CreatorPanel: React.FC<ICreatorPanelProps> = ({
   onNewImageChange,
   onAddIcon,
   newIconTitle,
-  onIconTitleChange
+  onIconTitleChange,
+  showIconPanel,
+  onToggleIconPanel,
+  showFolderPanel,
+  onToggleFolderPanel,
+  subfolders,
+  selectedSubfolder,
+  folderNameInput,
+  onFolderNameChange,
+  onCreateSubfolder,
+  onSubfolderChange,
+
+  folderRenameInput,
+  onFolderRenameChange,
+  onRenameSubfolder,
+  onDeleteSubfolder
 }) => {
   return (
     <div className={styles.creatorPane}>
@@ -145,31 +178,122 @@ const CreatorPanel: React.FC<ICreatorPanelProps> = ({
             </button>
           </div>
 
+
+          {/* -------- Ordner & Unterordner -------- */}
+          <div className={styles.sectionHr} />
+          <button
+            className={styles.button}
+            onClick={onToggleFolderPanel}
+            disabled={saving}
+            style={{ marginBottom: 12 }}
+          >
+            {showFolderPanel ? '▾ Ordner & Unterordner' : '▸ Ordner & Unterordner'}
+          </button>
+
+          {showFolderPanel && (
+            <>
+              {/* Unterordner auswählen */}
+              <label style={{ marginTop: 12 }}>Unterordner wählen</label>
+              <Dropdown
+                placeholder="Home-Ordner"
+                options={subfolders}
+                onChange={onSubfolderChange}
+                disabled={saving}
+                selectedKey={selectedSubfolder ?? ''}
+              />
+
+              {/* Unterordner erstellen */}
+              <label>Unterordner erstellen</label>
+              <div className={styles.inlineRow}>
+                <input
+                  type="text"
+                  value={folderNameInput}
+                  onChange={onFolderNameChange}
+                  disabled={saving}
+                  className={styles.textInput}
+                  placeholder="z. B. EG, 1.OG, Technik…"
+                />
+                <button
+                  className={styles.smallBtn}
+                  onClick={onCreateSubfolder}
+                  disabled={saving || !folderNameInput.trim()}
+                >
+                  Erstellen
+                </button>
+              </div>
+
+              {/* --- Umbenennen --- */}
+              <label style={{ marginTop: 8 }}>Unterordner umbenennen</label>
+              <div className={styles.inlineRow}>
+                <input
+                  type="text"
+                  value={folderRenameInput}
+                  onChange={onFolderRenameChange}
+                  disabled={saving || (selectedSubfolder ?? '') === ''}
+                  className={styles.textInput}
+                  placeholder="Neuer Name"
+                />
+                <button
+                  className={styles.smallBtn}
+                  onClick={onRenameSubfolder}
+                  disabled={saving || (selectedSubfolder ?? '') === '' || !folderRenameInput.trim()}
+                >
+                  Umbenennen
+                </button>
+              </div>
+
+              {/* --- Löschen --- */}
+              <button
+                className={styles.deleteProjBtn}
+                style={{ marginTop: 8 }}
+                onClick={onDeleteSubfolder}
+                disabled={saving || (selectedSubfolder ?? '') === ''}
+                title="Ausgewählten Unterordner samt Inhalt löschen"
+              >
+                Unterordner löschen
+              </button>
+            </>
+          )}
+
+
           {/* -------- 360° Bild + Icon -------- */}
-          <label>360°‑Bild mit neuem Icon hinzufügen</label>
-          <label>Icon-Titel (optional)</label>
-          <input
-            type="text"
-            value={newIconTitle}
-            onChange={onIconTitleChange}
-            className={styles.textInput}
-          />
-          <div className={styles.inlineRow}>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={onNewImageChange}
-              disabled={saving}
-            />
-            <br />
-            <button
-              className={styles.smallBtn}
-              onClick={onAddIcon}
-              disabled={saving || !newImageFile}
-            >
-              Icon hinzufügen
-            </button>
-          </div>
+          <div className={styles.sectionHr} />
+          <button
+            className={styles.button}
+            onClick={onToggleIconPanel}
+            disabled={saving}
+            style={{ marginBottom: 12 }}
+          >
+            {showIconPanel ? '▾ 360 Bild mit neuem Icon hinzufügen' : '▸ 360 Bild mit neuem Icon hinzufügen'}
+          </button>
+
+          {showIconPanel && (
+            <>
+              <label>Icon-Titel (optional)</label>
+              <input
+                type="text"
+                value={newIconTitle}
+                onChange={onIconTitleChange}
+                className={styles.textInput}
+              />
+              <div className={styles.inlineRow}>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={onNewImageChange}
+                  disabled={saving}
+                />
+                <br />
+                <button
+                  className={styles.smallBtn}
+                  onClick={onAddIcon}
+                  disabled={saving || !newImageFile}
+                >
+                  Icon hinzufügen
+                </button>
+              </div>
+            </>
+          )}
         </>
       )}
 

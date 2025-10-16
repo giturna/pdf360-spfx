@@ -114,7 +114,8 @@ export class IconManager {
       currentPdfItemId,
       newImageFile,
       selectedProjectId,
-      newIconTitle=''
+      newIconTitle='',
+      selectedSubfolder,
     } = st;
 
     if (!selectedProjectName || !currentPdfItemId || !newImageFile || !selectedProjectId) {
@@ -125,8 +126,11 @@ export class IconManager {
     this.set({ saving: true, status: 'Icon wird hinzugefügt…' });
     try {
       /* 1 | 360‑Bild hochladen */
+      const sub = selectedSubfolder && selectedSubfolder.trim() ? `/${selectedSubfolder}` : '';
+      const targetFolder = `${this.url}/${selectedProjectName}${sub}`;
+
       const imgRes = await this.sp.web
-        .getFolderByServerRelativePath(`${this.url}/${selectedProjectName}`)
+        .getFolderByServerRelativePath(targetFolder)
         .files.addUsingPath(newImageFile.name, newImageFile, { Overwrite:true });
       const imgItem = await imgRes.file.getItem();
       await imgItem.update({ FileType: 'Image360' });
@@ -220,13 +224,16 @@ export class IconManager {
    * ----------------------------------------------------------------*/
   public uploadIconImage = async (): Promise<void> => {
     const st = this.get();
-    const { uploadingImage, selectedProjectName, currentIconId } = st;
+    const { uploadingImage, selectedProjectName, currentIconId, selectedSubfolder } = st;
     if (!uploadingImage || !currentIconId || !selectedProjectName) return;
 
     this.set({ saving: true });
     try {
+      const sub = selectedSubfolder && selectedSubfolder.trim() ? `/${selectedSubfolder}` : '';
+      const targetFolder = `${this.url}/${selectedProjectName}${sub}`;
+
       const fileRes = await this.sp.web
-        .getFolderByServerRelativePath(`${this.url}/${selectedProjectName}`)
+        .getFolderByServerRelativePath(targetFolder)
         .files.addUsingPath(uploadingImage.name, uploadingImage, { Overwrite: true });
       const item = await fileRes.file.getItem();
       await item.update({ FileType: 'Image360' });
