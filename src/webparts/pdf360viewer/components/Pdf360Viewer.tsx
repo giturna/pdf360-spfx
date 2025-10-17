@@ -87,6 +87,10 @@ interface IState {
   selectedSubfolder?: string;        // '' oder undefined = wurzel
   folderNameInput: string;
   folderRenameInput: string;
+
+  projectRenameInput: string;
+  showProjectRenamePanel: boolean;
+  showAddPdfPanel: boolean;
 }
 
 export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IState> {
@@ -157,6 +161,10 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
       selectedSubfolder: '',
       folderNameInput: '',
       folderRenameInput: '',
+
+      projectRenameInput: '',
+      showProjectRenamePanel: false,
+      showAddPdfPanel: false,
     };
 
     this._icons = new IconManager({
@@ -179,10 +187,6 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
   private _subfolderStorageKey(projectName: string): string {
     return `Pdf360Viewer.subfolder.${projectName}`;
   }
-
-  private _toggleIconPanel = (): void => {
-    this.setState(prev => ({ showIconPanel: !prev.showIconPanel }));
-  };
 
 
   private _debounce<T extends (...a:any)=>void>(fn:T, ms=0) {
@@ -270,6 +274,7 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
     this.setState({
       selectedProjectId:   projectId,
       selectedProjectName: projectName,
+      projectRenameInput:  projectName,
       status:              '⏳ PDF wird geladen…'
     });
   
@@ -336,15 +341,6 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
     }
   };
 
-
-
-    private _toggleFolderPanel = (): void => {
-    this.setState(prev => ({ showFolderPanel: !prev.showFolderPanel }));
-  };
-
-  private _onFolderNameChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-    this.setState({ folderNameInput: e.target.value });
-  };
 
   private _createSubfolder = async (): Promise<void> => {
     const { selectedProjectName, folderNameInput } = this.state;
@@ -461,14 +457,75 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
   };
 
 
+  private _renameCurrentProject = async (): Promise<void> => {
+    const { selectedProjectId, selectedProjectName, projectRenameInput } = this.state;
+    const oldName = (selectedProjectName ?? '').trim();
+    const newName = (projectRenameInput ?? '').trim();
 
+    if (!selectedProjectId || !oldName) {
+      this.setState({ status: '❗ Bitte zuerst ein Projekt laden.' });
+      return;
+    }
+    if (!newName || newName === oldName) {
+      this.setState({ status: '❗ Neuer Projektname ist leer oder unverändert.' });
+      return;
+    }
 
+    this.setState({ saving: true, status: `Projekt wird umbenannt… (${oldName} → ${newName})` });
+    try {
+      // 1) Liste: Title updaten
+      await this._sp.web.lists.getByTitle('Projekte')
+        .items.getById(selectedProjectId).update({ Title: newName });
 
-  private _onNewImageChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-    this.setState({ newImageFile: e.target.files?.[0] ?? null });
-  }
-    private _onFolderRenameChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-    this.setState({ folderRenameInput: e.target.value });
+      // 2) Ordner: moveByPath
+      const oldPath = `${this._docLibUrl}/${oldName}`;
+      const newPath = `${this._docLibUrl}/${newName}`;
+      await this._sp.web.getFolderByServerRelativePath(oldPath).moveByPath(newPath);
+
+      // 3) localStorage anahtarını taşı
+      const oldKey = this._subfolderStorageKey(oldName);
+      const newKey = this._subfolderStorageKey(newName);
+      const savedSub = localStorage.getItem(oldKey);
+      if (savedSub !== null) {
+        localStorage.removeItem(oldKey);
+        localStorage.setItem(newKey, savedSub);
+      }
+
+      // 4) Dropdown seçeneklerini ve seçimi güncelle
+      this.setState(prev => ({
+        projects: prev.projects.map(p => p.key === selectedProjectId ? { ...p, text: newName } : p),
+        selectedProjectName: newName,
+        status: '✅ Projekt wurde umbenannt.'
+      }));
+
+      // 5) Alt klasör listesini ve PDF’leri yeni isimden yükle
+      await this._loadSubfolders(newName);
+      const startSub = savedSub ?? '';
+      this.setState({ selectedSubfolder: startSub, folderRenameInput: startSub });
+
+      const docs = await this._loadProjectDocs(newName, startSub || undefined);
+      this.setState({ projectDocs: docs });
+
+      if (docs.length) {
+        const firstRef = docs[0].FileRef;
+        const buf = await this._sp.web.getFileByServerRelativePath(firstRef).getBuffer();
+        this.setState({ pdfBuffer: buf, status: '' });
+        await this._renderPdf(buf);
+
+        const pdfItem = await this._sp.web.getFileByServerRelativePath(firstRef).getItem<{ Id:number }>('Id');
+        const { Id } = await pdfItem();
+        this.setState({ currentPdfItemId: Id });
+        await this._icons.loadIconsForPdf(Id);
+      } else {
+        this.setState({ pdfBuffer: null, currentPdfItemId: undefined });
+      }
+
+    } catch (e:any) {
+      console.error(e);
+      this.setState({ status: `🚫 Umbenennen fehlgeschlagen: ${e.message}` });
+    } finally {
+      this.setState({ saving: false });
+    }
   };
 
 
@@ -532,6 +589,18 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
   private _onIconTitleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     this.setState({ newIconTitle: e.target.value })
   };
+  private _onFolderNameChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    this.setState({ folderNameInput: e.target.value });
+  };
+  private _onProjectRenameChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    this.setState({ projectRenameInput: e.target.value });
+  };
+  private _onNewImageChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    this.setState({ newImageFile: e.target.files?.[0] ?? null });
+  }
+  private _onFolderRenameChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    this.setState({ folderRenameInput: e.target.value });
+  };
 
 
   private _uploadPdfToProject = async (): Promise<void> => {
@@ -579,6 +648,18 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
   };
   private _toggleLoadForm = (): void => {
     this.setState(prev => ({ showLoadForm: !prev.showLoadForm }));
+  };
+  private _toggleFolderPanel = (): void => {
+    this.setState(prev => ({ showFolderPanel: !prev.showFolderPanel }));
+  };
+  private _toggleIconPanel = (): void => {
+    this.setState(prev => ({ showIconPanel: !prev.showIconPanel }));
+  };
+  private _toggleProjectRenamePanel = (): void => {
+    this.setState(prev => ({ showProjectRenamePanel: !prev.showProjectRenamePanel }));
+  };
+  private _toggleAddPdfPanel = (): void => {
+    this.setState(prev => ({ showAddPdfPanel: !prev.showAddPdfPanel }));
   };
 
 
@@ -710,6 +791,14 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
           onFolderRenameChange={this._onFolderRenameChange}
           onRenameSubfolder={this._renameCurrentSubfolder}
           onDeleteSubfolder={this._deleteCurrentSubfolder}
+
+          projectRenameInput={this.state.projectRenameInput}
+          onProjectRenameChange={this._onProjectRenameChange}
+          onRenameProject={this._renameCurrentProject}
+          showProjectRenamePanel={this.state.showProjectRenamePanel}
+          onToggleProjectRenamePanel={this._toggleProjectRenamePanel}
+          showAddPdfPanel={this.state.showAddPdfPanel}
+          onToggleAddPdfPanel={this._toggleAddPdfPanel}
         />
         {/* ========== RECHTES PANEL – PDF- & Icon-Flow ========== */}
         <div className={styles.canvasPane}>

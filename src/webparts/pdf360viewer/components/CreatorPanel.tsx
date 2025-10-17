@@ -46,6 +46,15 @@ export interface ICreatorPanelProps {
   onFolderRenameChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRenameSubfolder: () => Promise<void>;
   onDeleteSubfolder: () => Promise<void>;
+
+  projectRenameInput: string;
+  onProjectRenameChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onRenameProject: () => Promise<void>;
+  showProjectRenamePanel: boolean;
+  onToggleProjectRenamePanel: () => void;
+
+  showAddPdfPanel: boolean;
+  onToggleAddPdfPanel: () => void;
 }
 
 const CreatorPanel: React.FC<ICreatorPanelProps> = ({
@@ -84,7 +93,16 @@ const CreatorPanel: React.FC<ICreatorPanelProps> = ({
   folderRenameInput,
   onFolderRenameChange,
   onRenameSubfolder,
-  onDeleteSubfolder
+  onDeleteSubfolder,
+
+  projectRenameInput,
+  onProjectRenameChange,
+  onRenameProject,
+  showProjectRenamePanel,
+  onToggleProjectRenamePanel,
+
+  showAddPdfPanel,
+  onToggleAddPdfPanel
 }) => {
   return (
     <div className={styles.creatorPane}>
@@ -100,7 +118,7 @@ const CreatorPanel: React.FC<ICreatorPanelProps> = ({
 
       {showCreateForm && (
         <>
-          <label>Projekt Name</label>
+          <label>Projekt Name</label>
           <input
             type="text"
             value={projectName}
@@ -148,6 +166,38 @@ const CreatorPanel: React.FC<ICreatorPanelProps> = ({
             disabled={saving}
           />
 
+          {/* --- Projekt umbenennen --- */}
+          <button
+            className={styles.button}
+            onClick={onToggleProjectRenamePanel}
+            disabled={saving || !selectedProjectId}
+            style={{ marginTop: 12, marginBottom: 8 }}
+          >
+            {showProjectRenamePanel ? '▾ Projekt umbenennen' : '▸ Projekt umbenennen'}
+          </button>
+
+          {showProjectRenamePanel && (
+            <>
+              <div className={styles.inlineRow}>
+                <input
+                  type="text"
+                  value={projectRenameInput}
+                  onChange={onProjectRenameChange}
+                  disabled={saving || !selectedProjectId}
+                  className={styles.textInput}
+                  placeholder="Neuer Projektname"
+                />
+                <button
+                  className={styles.smallBtn}
+                  onClick={onRenameProject}
+                  disabled={saving || !selectedProjectId || !projectRenameInput.trim()}
+                >
+                  Umbenennen
+                </button>
+              </div>
+            </>
+          )}
+
           {selectedProjectId && (
             <button
               className={styles.deleteProjBtn}
@@ -157,27 +207,6 @@ const CreatorPanel: React.FC<ICreatorPanelProps> = ({
               Projekt löschen
             </button>
           )}
-
-          {/* -------- Weitere PDF hinzufügen -------- */}
-          <div className={styles.sectionHr} />
-          <label>Weitere Pläne hinzufügen</label>
-          <div className={styles.inlineRow}>
-            <input
-              type="file"
-              accept=".pdf"
-              onChange={onNewPdfChange}
-              disabled={saving}
-            />
-            <br />
-            <button
-              className={styles.smallBtn}
-              onClick={onUploadPdf}
-              disabled={saving || !newPdfFile}
-            >
-              Hinzufügen
-            </button>
-          </div>
-
 
           {/* -------- Ordner & Unterordner -------- */}
           <div className={styles.sectionHr} />
@@ -252,6 +281,38 @@ const CreatorPanel: React.FC<ICreatorPanelProps> = ({
               >
                 Unterordner löschen
               </button>
+            </>
+          )}
+
+          {/* -------- Weitere Pläne hinzufügen -------- */}
+          <div className={styles.sectionHr} />
+          <button
+            className={styles.button}
+            onClick={onToggleAddPdfPanel}
+            disabled={saving}
+            style={{ marginBottom: 12 }}
+          >
+            {showAddPdfPanel ? '▾ Weitere Pläne hinzufügen' : '▸ Weitere Pläne hinzufügen'}
+          </button>
+
+          {showAddPdfPanel && (
+            <>
+              <div className={styles.inlineRow}>
+                <input
+                  type="file"
+                  accept=".pdf"
+                  onChange={onNewPdfChange}
+                  disabled={saving}
+                />
+                <br />
+                <button
+                  className={styles.smallBtn}
+                  onClick={onUploadPdf}
+                  disabled={saving || !newPdfFile}
+                >
+                  Hinzufügen
+                </button>
+              </div>
             </>
           )}
 
