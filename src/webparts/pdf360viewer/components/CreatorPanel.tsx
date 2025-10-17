@@ -61,6 +61,12 @@ export interface ICreatorPanelProps {
   planNameEdits: Record<string, string>;
   onPlanNameEditChange: (fileRef: string, newName: string) => void;
   onSaveRenamedPlans: () => Promise<void>;
+  showReplacePlanPanel: boolean;
+  onToggleReplacePlanPanel: () => void;
+  replacePdfFile: File | null;
+  onReplacePdfChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onReplaceCurrentPlan: () => Promise<void>;
+  hasCurrentPlan: boolean;
 }
 
 const CreatorPanel: React.FC<ICreatorPanelProps> = ({
@@ -114,7 +120,13 @@ const CreatorPanel: React.FC<ICreatorPanelProps> = ({
   docsForRename,
   planNameEdits,
   onPlanNameEditChange,
-  onSaveRenamedPlans
+  onSaveRenamedPlans,
+  showReplacePlanPanel,
+  onToggleReplacePlanPanel,
+  replacePdfFile,
+  onReplacePdfChange,
+  onReplaceCurrentPlan,
+  hasCurrentPlan
 }) => {
   return (
     <div className={styles.creatorPane}>
@@ -366,6 +378,38 @@ const CreatorPanel: React.FC<ICreatorPanelProps> = ({
               >
                 Speichern
               </button>
+            </>
+          )}
+
+
+          {/* -------- Aktuellen Plan ersetzen -------- */}
+          <button
+            className={styles.button}
+            onClick={onToggleReplacePlanPanel}
+            disabled={saving || !hasCurrentPlan}
+            style={{ marginBottom: 12 }}
+          >
+            {showReplacePlanPanel ? '▾ Aktuellen Plan ersetzen' : '▸ Aktuellen Plan ersetzen'}
+          </button>
+
+          {showReplacePlanPanel && (
+            <>
+              <div className={styles.inlineRow}>
+                <input
+                  type="file"
+                  accept=".pdf"
+                  onChange={onReplacePdfChange}
+                  disabled={saving || !hasCurrentPlan}
+                />
+                <br />
+                <button
+                  className={styles.smallBtn}
+                  onClick={onReplaceCurrentPlan}
+                  disabled={saving || !hasCurrentPlan || !replacePdfFile}
+                >
+                  Ersetzen
+                </button>
+              </div>
             </>
           )}
 

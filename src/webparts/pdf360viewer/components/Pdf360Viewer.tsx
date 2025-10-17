@@ -93,6 +93,9 @@ interface IState {
   showAddPdfPanel: boolean;
   showRenamePlansPanel: boolean;
   planNameEdits: Record<string, string>;
+  showReplacePlanPanel: boolean;
+  replacePdfFile: File | null;
+  currentFileRef?: string;
 }
 
 export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IState> {
@@ -169,6 +172,9 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
       showAddPdfPanel: false,
       showRenamePlansPanel: false,
       planNameEdits: {},
+      showReplacePlanPanel: false,
+      replacePdfFile: null,
+      currentFileRef: undefined,
     };
 
     this._icons = new IconManager({
@@ -326,7 +332,7 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
       // 6) Die erste PDF herunterladen und auf das Canvas zeichnen
       const firstRef = pdfFiles[0].ServerRelativeUrl;
       const buf      = await this._sp.web.getFileByServerRelativePath(firstRef).getBuffer();
-      this.setState({ pdfBuffer: buf, status: '' });
+      this.setState({ pdfBuffer: buf, status: '', currentFileRef: firstRef });
       await this._renderPdf(buf);
 
       // Die itemId der PDF abrufen
@@ -399,12 +405,10 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
 
       const firstRef = docs[0].FileRef;
       const buf = await this._sp.web.getFileByServerRelativePath(firstRef).getBuffer();
-      this.setState({ pdfBuffer: buf, status: '' });
+      this.setState({ pdfBuffer: buf, status: '', currentFileRef: firstRef });
       await this._renderPdf(buf);
 
-      const pdfItem = await this._sp.web
-        .getFileByServerRelativePath(firstRef)
-        .getItem<{ Id: number }>('Id');
+      const pdfItem = await this._sp.web.getFileByServerRelativePath(firstRef).getItem<{ Id: number }>('Id');
       const { Id: pdfItemId } = await pdfItem();
       this.setState({ currentPdfItemId: pdfItemId });
 
@@ -739,6 +743,13 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
       return next as any;
     });
   };
+  private _toggleReplacePlanPanel = (): void => {
+    this.setState(prev => ({ showReplacePlanPanel: !prev.showReplacePlanPanel }));
+  };
+  private _onReplacePdfChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    this.setState({ replacePdfFile: e.target.files?.[0] ?? null });
+  };
+
 
 
   private _createProject = async (): Promise<void> => {
@@ -791,22 +802,55 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
     this.setState({ status: '⏳ PDF wird geladen…', icons: [] }); // Alte Icons entfernen
   
     // 1) PDF-Buffer abrufen und rendern
-    const buf = await this._sp.web
-      .getFileByServerRelativePath(fileRef)
-      .getBuffer();
-    this.setState({ pdfBuffer: buf, status: '' });
+    const buf = await this._sp.web.getFileByServerRelativePath(fileRef).getBuffer();
+    this.setState({ pdfBuffer: buf, status: '', currentFileRef: fileRef });
     await this._renderPdf(buf);
   
     // 2) Die ID abrufen und im State speichern
-    const pdfItem = await this._sp.web
-      .getFileByServerRelativePath(fileRef)
-      .getItem<{ Id: number }>('Id');
+    const pdfItem = await this._sp.web.getFileByServerRelativePath(fileRef).getItem<{ Id: number }>('Id');
     const { Id: pdfItemId } = await pdfItem();
     this.setState({ currentPdfItemId: pdfItemId });
   
     // 3) Die zu diesem PDF gehörenden Icons laden
     await this._icons.loadIconsForPdf(pdfItemId);
   };
+
+
+  private _replaceCurrentPlan = async (): Promise<void> => {
+    const { currentFileRef, replacePdfFile, currentPdfItemId } = this.state;
+    if (!currentFileRef || !replacePdfFile || !currentPdfItemId) {
+      this.setState({ status: '❗ Kein aktueller Plan oder Datei ausgewählt.' });
+      return;
+    }
+
+    this.setState({ saving: true, status: 'Plan wird ersetzt…' });
+    try {
+      // 1) Dosya içeriğini mevcut dosyada güncelle (ID değişmez)
+      await this._sp.web
+        .getFileByServerRelativePath(currentFileRef)
+        .setContentChunked(replacePdfFile);
+
+      // 2) Yeni içeriği anında görüntüle
+      const buf = await this._sp.web
+        .getFileByServerRelativePath(currentFileRef)
+        .getBuffer();
+      this.setState({ pdfBuffer: buf, status: '✅ Plan wurde ersetzt.' });
+      await this._renderPdf(buf);
+
+      // 3) İkonlar aynı PDF öğesine bağlı; yine de tazelemek istersen:
+      await this._icons.loadIconsForPdf(currentPdfItemId);
+
+      // 4) Input’u temizle (panel açık kalsın)
+      this.setState({ replacePdfFile: null });
+
+    } catch (e:any) {
+      console.error(e);
+      this.setState({ status: `🚫 Ersetzen fehlgeschlagen: ${e.message}` });
+    } finally {
+      this.setState({ saving: false });
+    }
+  };
+
 
 
   public render(): React.ReactElement<IPdf360ViewerProps> {
@@ -883,6 +927,12 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
           planNameEdits={this.state.planNameEdits}
           onPlanNameEditChange={this._onPlanNameEditChange}
           onSaveRenamedPlans={this._saveRenamedPlans}
+          showReplacePlanPanel={this.state.showReplacePlanPanel}
+          onToggleReplacePlanPanel={this._toggleReplacePlanPanel}
+          replacePdfFile={this.state.replacePdfFile}
+          onReplacePdfChange={this._onReplacePdfChange}
+          onReplaceCurrentPlan={this._replaceCurrentPlan}
+          hasCurrentPlan={!!this.state.currentFileRef}
         />
         {/* ========== RECHTES PANEL – PDF- & Icon-Flow ========== */}
         <div className={styles.canvasPane}>
