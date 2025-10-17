@@ -490,7 +490,7 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
       const newPath = `${this._docLibUrl}/${newName}`;
       await this._sp.web.getFolderByServerRelativePath(oldPath).moveByPath(newPath);
 
-      // 3) localStorage anahtarını taşı
+      // 3) Verschiebe den localStorage Schlüssel
       const oldKey = this._subfolderStorageKey(oldName);
       const newKey = this._subfolderStorageKey(newName);
       const savedSub = localStorage.getItem(oldKey);
@@ -499,14 +499,14 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
         localStorage.setItem(newKey, savedSub);
       }
 
-      // 4) Dropdown seçeneklerini ve seçimi güncelle
+      // 4) Aktualisiere die Dropdown Optionen und die Auswahl
       this.setState(prev => ({
         projects: prev.projects.map(p => p.key === selectedProjectId ? { ...p, text: newName } : p),
         selectedProjectName: newName,
         status: '✅ Projekt wurde umbenannt.'
       }));
 
-      // 5) Alt klasör listesini ve PDF’leri yeni isimden yükle
+      // 5) Lade die Unterordnerliste und die PDFs vom neuen Namen
       await this._loadSubfolders(newName);
       const startSub = savedSub ?? '';
       this.setState({ selectedSubfolder: startSub, folderRenameInput: startSub });
@@ -542,10 +542,10 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
     const { selectedProjectName, selectedSubfolder, projectDocs, planNameEdits } = this.state;
     if (!selectedProjectName) return;
 
-    // Hedef klasör yolu
+    // Zielordnerpfad
     const folderPath = this._currentFolderPath(selectedProjectName, selectedSubfolder);
 
-    // Değişenleri belirle
+    // Bestimme die geänderten Elemente
     const changes = projectDocs
       .map(d => ({
         fileRef: d.FileRef,
@@ -559,7 +559,7 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
       return;
     }
 
-    // Basit uzantı koruması: .pdf yoksa ekle
+    // Einfache Erweiterungsschutz: Wenn .pdf fehlt, füge es hinzu
     const ensurePdf = (name: string) =>
       name.toLowerCase().endsWith('.pdf') ? name : `${name}.pdf`;
 
@@ -569,17 +569,17 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
         const target = `${folderPath}/${ensurePdf(ch.newName)}`;
         await this._sp.web
           .getFileByServerRelativePath(ch.fileRef)
-          .moveByPath(target, true); // aynı klasörde yeni ada taşı (rename)
+          .moveByPath(target, true); // Im selben Ordner unter neuem Namen verschieben (umbenennen)
       }
 
-      // Listeyi tazele
+      // Liste aktualisieren
       const docs = await this._loadProjectDocs(selectedProjectName, selectedSubfolder || undefined);
       this.setState({
         projectDocs: docs,
         status: '✅ Umbenennung abgeschlossen.'
       });
 
-      // Panel açık kalsın ama yeni isimlerle inputları güncelle
+      // Panel offen lassen, aber die Eingabefelder mit den neuen Namen aktualisieren
       const map: Record<string,string> = {};
       for (const d of docs) map[d.FileRef] = d.FileLeafRef;
       this.setState({ planNameEdits: map });
@@ -735,7 +735,7 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
       const willOpen = !prev.showRenamePlansPanel;
       const next: Partial<IState> = { showRenamePlansPanel: willOpen };
       if (willOpen) {
-        // panel açılırken mevcut PDF listesine göre edit haritasını hazırla
+        // Beim Öffnen des Panels die Bearbeitungskarte anhand der aktuellen PDF Liste vorbereiten
         const map: Record<string, string> = {};
         for (const d of prev.projectDocs) map[d.FileRef] = d.FileLeafRef;
         next.planNameEdits = map;
@@ -825,22 +825,22 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
 
     this.setState({ saving: true, status: 'Plan wird ersetzt…' });
     try {
-      // 1) Dosya içeriğini mevcut dosyada güncelle (ID değişmez)
+      // 1) Aktualisiere den Dateiinhalt in der vorhandenen Datei (ID bleibt unverändert)
       await this._sp.web
         .getFileByServerRelativePath(currentFileRef)
         .setContentChunked(replacePdfFile);
 
-      // 2) Yeni içeriği anında görüntüle
+      // 2) Zeige den neuen Inhalt sofort an
       const buf = await this._sp.web
         .getFileByServerRelativePath(currentFileRef)
         .getBuffer();
       this.setState({ pdfBuffer: buf, status: '✅ Plan wurde ersetzt.' });
       await this._renderPdf(buf);
 
-      // 3) İkonlar aynı PDF öğesine bağlı; yine de tazelemek istersen:
+      // 3) Die Icons sind mit demselben PDF-Element verknüpft
       await this._icons.loadIconsForPdf(currentPdfItemId);
 
-      // 4) Input’u temizle (panel açık kalsın)
+      // 4) Eingabefeld leeren (Panel offen lassen)
       this.setState({ replacePdfFile: null });
 
     } catch (e:any) {

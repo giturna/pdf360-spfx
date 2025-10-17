@@ -3,7 +3,7 @@
   "solution": {
     "name": "pdf360viewer-client-side-solution",
     "id": "958918a0-d21a-4023-a332-ad0615385ce3",
-    "version": "2.4.3.0",
+    "version": "2.5.27.48",
     "includeClientSideAssets": true,
     "skipFeatureDeployment": true,
     "isDomainIsolated": false,

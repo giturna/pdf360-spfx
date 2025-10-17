@@ -353,7 +353,7 @@ const CreatorPanel: React.FC<ICreatorPanelProps> = ({
 
           {showRenamePlansPanel && (
             <>
-              {/* Aktif klasördeki PDF’ler için alt alta girdi alanları */}
+              {/* Eingabefelder untereinander für die PDFs im aktiven Ordner */}
               {docsForRename.length === 0 ? (
                 <p>In diesem Ordner sind keine PDFs vorhanden.</p>
               ) : (
