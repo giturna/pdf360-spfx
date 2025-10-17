@@ -91,6 +91,8 @@ interface IState {
   projectRenameInput: string;
   showProjectRenamePanel: boolean;
   showAddPdfPanel: boolean;
+  showRenamePlansPanel: boolean;
+  planNameEdits: Record<string, string>;
 }
 
 export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IState> {
@@ -165,6 +167,8 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
       projectRenameInput: '',
       showProjectRenamePanel: false,
       showAddPdfPanel: false,
+      showRenamePlansPanel: false,
+      planNameEdits: {},
     };
 
     this._icons = new IconManager({
@@ -530,6 +534,62 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
 
 
 
+  private _saveRenamedPlans = async (): Promise<void> => {
+    const { selectedProjectName, selectedSubfolder, projectDocs, planNameEdits } = this.state;
+    if (!selectedProjectName) return;
+
+    // Hedef klasör yolu
+    const folderPath = this._currentFolderPath(selectedProjectName, selectedSubfolder);
+
+    // Değişenleri belirle
+    const changes = projectDocs
+      .map(d => ({
+        fileRef: d.FileRef,
+        oldName: d.FileLeafRef,
+        newName: (planNameEdits[d.FileRef] ?? d.FileLeafRef).trim()
+      }))
+      .filter(x => x.newName && x.newName !== x.oldName);
+
+    if (changes.length === 0) {
+      this.setState({ status: 'Keine Änderungen.' });
+      return;
+    }
+
+    // Basit uzantı koruması: .pdf yoksa ekle
+    const ensurePdf = (name: string) =>
+      name.toLowerCase().endsWith('.pdf') ? name : `${name}.pdf`;
+
+    this.setState({ saving: true, status: 'Pläne werden umbenannt…' });
+    try {
+      for (const ch of changes) {
+        const target = `${folderPath}/${ensurePdf(ch.newName)}`;
+        await this._sp.web
+          .getFileByServerRelativePath(ch.fileRef)
+          .moveByPath(target, true); // aynı klasörde yeni ada taşı (rename)
+      }
+
+      // Listeyi tazele
+      const docs = await this._loadProjectDocs(selectedProjectName, selectedSubfolder || undefined);
+      this.setState({
+        projectDocs: docs,
+        status: '✅ Umbenennung abgeschlossen.'
+      });
+
+      // Panel açık kalsın ama yeni isimlerle inputları güncelle
+      const map: Record<string,string> = {};
+      for (const d of docs) map[d.FileRef] = d.FileLeafRef;
+      this.setState({ planNameEdits: map });
+
+    } catch (e:any) {
+      console.error(e);
+      this.setState({ status: `🚫 Umbenennen fehlgeschlagen: ${e.message}` });
+    } finally {
+      this.setState({ saving: false });
+    }
+  };
+
+
+
   private _closeModal = (): void => {
     this.setState({ isModalOpen: false, modalImageUrl: null });
   }
@@ -601,6 +661,11 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
   private _onFolderRenameChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     this.setState({ folderRenameInput: e.target.value });
   };
+  private _onPlanNameEditChange = (fileRef: string, newName: string): void => {
+    this.setState(prev => ({
+      planNameEdits: { ...prev.planNameEdits, [fileRef]: newName }
+    }));
+  };
 
 
   private _uploadPdfToProject = async (): Promise<void> => {
@@ -660,6 +725,19 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
   };
   private _toggleAddPdfPanel = (): void => {
     this.setState(prev => ({ showAddPdfPanel: !prev.showAddPdfPanel }));
+  };
+  private _toggleRenamePlansPanel = (): void => {
+    this.setState(prev => {
+      const willOpen = !prev.showRenamePlansPanel;
+      const next: Partial<IState> = { showRenamePlansPanel: willOpen };
+      if (willOpen) {
+        // panel açılırken mevcut PDF listesine göre edit haritasını hazırla
+        const map: Record<string, string> = {};
+        for (const d of prev.projectDocs) map[d.FileRef] = d.FileLeafRef;
+        next.planNameEdits = map;
+      }
+      return next as any;
+    });
   };
 
 
@@ -799,6 +877,12 @@ export default class Pdf360Viewer extends React.Component<IPdf360ViewerProps, IS
           onToggleProjectRenamePanel={this._toggleProjectRenamePanel}
           showAddPdfPanel={this.state.showAddPdfPanel}
           onToggleAddPdfPanel={this._toggleAddPdfPanel}
+          showRenamePlansPanel={this.state.showRenamePlansPanel}
+          onToggleRenamePlansPanel={this._toggleRenamePlansPanel}
+          docsForRename={this.state.projectDocs}
+          planNameEdits={this.state.planNameEdits}
+          onPlanNameEditChange={this._onPlanNameEditChange}
+          onSaveRenamedPlans={this._saveRenamedPlans}
         />
         {/* ========== RECHTES PANEL – PDF- & Icon-Flow ========== */}
         <div className={styles.canvasPane}>

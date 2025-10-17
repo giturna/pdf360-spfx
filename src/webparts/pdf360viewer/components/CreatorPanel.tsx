@@ -55,6 +55,12 @@ export interface ICreatorPanelProps {
 
   showAddPdfPanel: boolean;
   onToggleAddPdfPanel: () => void;
+  showRenamePlansPanel: boolean;
+  onToggleRenamePlansPanel: () => void;
+  docsForRename: { FileRef: string; FileLeafRef: string }[];
+  planNameEdits: Record<string, string>;
+  onPlanNameEditChange: (fileRef: string, newName: string) => void;
+  onSaveRenamedPlans: () => Promise<void>;
 }
 
 const CreatorPanel: React.FC<ICreatorPanelProps> = ({
@@ -102,7 +108,13 @@ const CreatorPanel: React.FC<ICreatorPanelProps> = ({
   onToggleProjectRenamePanel,
 
   showAddPdfPanel,
-  onToggleAddPdfPanel
+  onToggleAddPdfPanel,
+  showRenamePlansPanel,
+  onToggleRenamePlansPanel,
+  docsForRename,
+  planNameEdits,
+  onPlanNameEditChange,
+  onSaveRenamedPlans
 }) => {
   return (
     <div className={styles.creatorPane}>
@@ -313,6 +325,47 @@ const CreatorPanel: React.FC<ICreatorPanelProps> = ({
                   Hinzufügen
                 </button>
               </div>
+            </>
+          )}
+
+
+          {/* -------- Pläne umbenennen -------- */}
+          <button
+            className={styles.button}
+            onClick={onToggleRenamePlansPanel}
+            disabled={saving}
+            style={{ marginBottom: 12 }}
+          >
+            {showRenamePlansPanel ? '▾ Pläne umbenennen' : '▸ Pläne umbenennen'}
+          </button>
+
+          {showRenamePlansPanel && (
+            <>
+              {/* Aktif klasördeki PDF’ler için alt alta girdi alanları */}
+              {docsForRename.length === 0 ? (
+                <p>In diesem Ordner sind keine PDFs vorhanden.</p>
+              ) : (
+                docsForRename.map(doc => (
+                  <div key={doc.FileRef} className={styles.inlineRow} style={{ marginBottom: 6 }}>
+                    <input
+                      type="text"
+                      value={planNameEdits[doc.FileRef] ?? doc.FileLeafRef}
+                      onChange={e => onPlanNameEditChange(doc.FileRef, e.target.value)}
+                      disabled={saving}
+                      className={styles.textInput}
+                    />
+                  </div>
+                ))
+              )}
+
+              <button
+                className={styles.button}
+                onClick={onSaveRenamedPlans}
+                disabled={saving || docsForRename.length === 0}
+                style={{ marginTop: 6 }}
+              >
+                Speichern
+              </button>
             </>
           )}
 
